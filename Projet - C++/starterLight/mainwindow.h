@@ -6,6 +6,7 @@
 #include <OpenMesh/Core/IO/MeshIO.hh>
 #include <OpenMesh/Core/Mesh/TriMesh_ArrayKernelT.hh>
 
+
 #define ARETE 0
 #define TRIANGLE 1
 #define INFINI 2
@@ -64,6 +65,14 @@ public:
     void separation_3_triangle(MyMesh *_mesh, VertexHandle p, FaceHandle f);
     void separation_4_triangle(MyMesh *_mesh, VertexHandle p, EdgeHandle e);
     void Hermeline(MyMesh * _mesh, int id_point);
+    bool crit_boule_vide(MyMesh * _mesh, EdgeHandle eh);
+    MyMesh::Point intersection(MyMesh::Point m1, MyMesh::Point v1, MyMesh::Point m2, MyMesh::Point v2);
+    MyMesh::Point rotation(MyMesh::Point A, MyMesh::Point B);
+    float distance(MyMesh::Point A, MyMesh::Point B);
+    MyMesh::Point milieu(MyMesh::Point A, MyMesh::Point B);
+
+
+
 
     void displayMesh(MyMesh *_mesh, DisplayMode mode = DisplayMode::Normal);
     void resetAllColorsAndThickness(MyMesh* _mesh);

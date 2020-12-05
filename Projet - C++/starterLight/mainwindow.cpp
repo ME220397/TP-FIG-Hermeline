@@ -469,6 +469,98 @@ bool MainWindow::est_dans_triangle(MyMesh * _mesh, VertexHandle M, FaceHandle fh
     return true;
 
 }
+
+MyMesh::Point milieu(MyMesh::Point A, MyMesh::Point B)
+{
+    MyMesh::Point I;
+    I[0] = (A[0] + B[0])/2;
+    I[1] = (A[1] + B[1])/2;
+    return I;
+}
+
+
+float distance(MyMesh::Point A, MyMesh::Point B)
+{
+    float dist = sqrt(pow(A[0] - B[0], 2) + pow(A[1] - B[1], 2));
+    return dist;
+}
+
+
+MyMesh::Point rotation(MyMesh::Point A, MyMesh::Point B)
+{
+    MyMesh::Point AB = B-A;
+    MyMesh::Point mediatrice;
+    mediatrice[0] = AB[0]*cos(90) - AB[1]*sin(90);
+    mediatrice[1] = AB[0]*sin(90) + AB[1]*cos(90);
+    return mediatrice;
+}
+
+
+MyMesh::Point intersection(MyMesh::Point m1, MyMesh::Point v1, MyMesh::Point m2, MyMesh::Point v2)
+{
+    MyMesh::Point inter;
+
+    float t = (v2[0]*(m2[1]-m1[2]) + v2[1]*(m2[0]-m2[0]))/(v2[0]*v1[1] - v1[0]*v2[1]);
+    inter[0] = m1[0] + t*v1[0];
+    inter[1] = m1[1] + t*v1[1];
+    return inter;
+}
+
+
+bool crit_boule_vide(MyMesh * _mesh, EdgeHandle eh)
+{
+    HalfedgeHandle heh = _mesh->halfedge_handle(eh,0);
+    HalfedgeHandle heh_opp = _mesh->halfedge_handle(eh,1);
+    //Initialisation
+    VertexHandle Ah = _mesh->from_vertex_handle(heh);
+    VertexHandle Bh = _mesh->to_vertex_handle(heh);
+    MyMesh::Point A = _mesh->point(Ah);
+    MyMesh::Point B = _mesh->point(Bh);
+    //recuperation du milieu de [AB]
+    MyMesh::Point milieu1 = milieu(A,B);
+    //Recuperation de la mediatrice du segment AB
+    MyMesh::Point mediatrice1 = rotation(A,B);
+
+    heh = _mesh->next_halfedge_handle(heh);
+    VertexHandle Ch = _mesh->to_vertex_handle(heh);
+    MyMesh::Point C = _mesh->point(Ch);
+    //de meme pour le segment BC
+    MyMesh::Point milieu2 = milieu(B,C);
+    MyMesh::Point mediatrice2 = rotation(B,C);
+
+    //recuperation du point du triangle oppose
+    heh_opp = _mesh->next_halfedge_handle(heh_opp);
+    VertexHandle Dh = _mesh->to_vertex_handle(heh_opp);
+    MyMesh::Point D = _mesh->point(Dh);
+    /*
+    MyMesh::Point milieu3 = milieu(A,D);
+    MyMesh::Point mediatrice3 = rotation(A,D);*/
+
+    MyMesh::Point centre_circ = intersection(milieu1, mediatrice1, milieu2, mediatrice2);
+    float rayon = distance(A, centre_circ);
+    if(rayon >= distance(D, centre_circ))
+        return true;
+
+/*    centre_circ = intersection(milieu1, mediatrice1, milieu3, mediatrice3);
+    rayon = distance(D, centre_circ);
+    if(rayon >= distance(A, centre_circ))
+        return true;*/
+
+    return false;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 // permet d'initialiser les couleurs et les épaisseurs des élements du maillage
 void MainWindow::resetAllColorsAndThickness(MyMesh* _mesh)
 {
