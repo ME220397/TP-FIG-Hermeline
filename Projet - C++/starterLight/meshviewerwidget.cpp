@@ -26,7 +26,7 @@ void MeshViewerWidget::initializeGL()
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     glGetDoublev(GL_MODELVIEW_MATRIX, modelview_matrix_);
-    set_scene_pos(Vec3f(0.0, 0.0, 0.0), 1.0);
+    set_scene_pos(Vec3f(0.0, 0.0,200.0), 1.0);
 
     glEnable( GL_MULTISAMPLE );
 }
@@ -267,7 +267,7 @@ void MeshViewerWidget::update_projection_matrix()
 {
     glMatrixMode( GL_PROJECTION );
     glLoadIdentity();
-    gluPerspective(45.0, (GLfloat) width() / (GLfloat) height(), 0.01*radius_, 100.0*radius_);
+    gluPerspective(45.0, (GLfloat) width() / (GLfloat) height(), 0.01*radius_, 10000.0*radius_);
     glGetDoublev( GL_PROJECTION_MATRIX, projection_matrix_);
     glMatrixMode( GL_MODELVIEW );
 }

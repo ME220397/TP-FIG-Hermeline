@@ -155,7 +155,7 @@ MyMesh MainWindow::generation_aleatoire(int n){
     creer_triangle_englobant(&nube);
     n_vertices = nube.n_vertices();
     id_point = 0;
-    color_vertex(&nube, id_point, MyMesh::Color(0, 255, 0));
+    color_vertex(&nube, id_point, MyMesh::Color(255, 165, 0));
     return nube;
 }
 
