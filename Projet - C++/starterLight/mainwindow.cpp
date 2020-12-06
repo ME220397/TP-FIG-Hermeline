@@ -1,6 +1,8 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "QRandomGenerator"
+#include<iostream>
+#include<queue>
 
 MyMesh MainWindow::generer_3points(){
     MyMesh nube;
@@ -151,6 +153,9 @@ MyMesh MainWindow::generation_aleatoire(int n){
         nube.set_color(*v, MyMesh::Color(0, 0, 255));
     }
 
+    for (MyMesh::VertexIter v = nube.vertices_begin(); v!= nube.vertices_end(); v++){
+        nube.property(Inf, *v) = PAS_INFINI;
+    }
     //creer_boite_englobante(&nube);
     creer_triangle_englobant(&nube);
     n_vertices = nube.n_vertices();
@@ -292,7 +297,7 @@ int MainWindow::determinant(MyMesh::Point A, MyMesh::Point B, MyMesh::Point P){
           det = | Ay By Py |        det < 0 -> P à droite
                 | 1  1  1  |        det = 0 -> P inclu dans le segment
 
-                  | By Py |      | Ax Py |      | Ay Px |
+                  | By Py |      | Ax Py |      | Ay Bx |
           det = Ax| 1  1  | - Bx | 1  1  | + Px | 1  1 |
      */
     int x = 0, y = 1;
@@ -470,7 +475,7 @@ bool MainWindow::est_dans_triangle(MyMesh * _mesh, VertexHandle M, FaceHandle fh
 
 }
 
-MyMesh::Point milieu(MyMesh::Point A, MyMesh::Point B)
+MyMesh::Point MainWindow::milieu(MyMesh::Point A, MyMesh::Point B)
 {
     MyMesh::Point I;
     I[0] = (A[0] + B[0])/2;
@@ -479,14 +484,14 @@ MyMesh::Point milieu(MyMesh::Point A, MyMesh::Point B)
 }
 
 
-float distance(MyMesh::Point A, MyMesh::Point B)
+float MainWindow::distance(MyMesh::Point A, MyMesh::Point B)
 {
-    float dist = sqrt(pow(A[0] - B[0], 2) + pow(A[1] - B[1], 2));
+    float dist = sqrt(pow(B[0] - A[0], 2) + pow(B[1] - A[1], 2));
     return dist;
 }
 
 
-MyMesh::Point rotation(MyMesh::Point A, MyMesh::Point B)
+MyMesh::Point MainWindow::rotation(MyMesh::Point A, MyMesh::Point B)
 {
     MyMesh::Point AB = B-A;
     MyMesh::Point mediatrice;
@@ -496,70 +501,133 @@ MyMesh::Point rotation(MyMesh::Point A, MyMesh::Point B)
 }
 
 
-MyMesh::Point intersection(MyMesh::Point m1, MyMesh::Point v1, MyMesh::Point m2, MyMesh::Point v2)
+MyMesh::Point MainWindow::intersection(MyMesh::Point m1, MyMesh::Point v1, MyMesh::Point m2, MyMesh::Point v2)
 {
     MyMesh::Point inter;
 
-    float t = (v2[0]*(m2[1]-m1[2]) + v2[1]*(m2[0]-m2[0]))/(v2[0]*v1[1] - v1[0]*v2[1]);
-    inter[0] = m1[0] + t*v1[0];
-    inter[1] = m1[1] + t*v1[1];
+    float a = m1[0];
+
+    float b = m1[1];
+
+    float c = m2[0];
+
+    float d = m2[1];
+
+    float alpha = v1[0];
+
+    float beta = v1[1];
+
+    float u = v2[0];
+
+    float v = v2[1];
+
+
+    float A = alpha * (b-d);
+
+    float B = beta * (c-a);
+
+    float C = alpha * v - beta * u;
+
+    float t = (A + B)/C;
+
+
+    inter[0] = a + alpha * t;
+
+    inter[1] = b + beta * t;
+
     return inter;
 }
 
+float calcul_aire(MyMesh::Point A, MyMesh::Point B, MyMesh::Point C){
+    MyMesh::Point v1 = A;
+    MyMesh::Point v2 = B;
+    MyMesh::Point v3 = C;
 
-bool crit_boule_vide(MyMesh * _mesh, EdgeHandle eh)
-{
-    HalfedgeHandle heh = _mesh->halfedge_handle(eh,0);
-    HalfedgeHandle heh_opp = _mesh->halfedge_handle(eh,1);
-    //Initialisation
-    VertexHandle Ah = _mesh->from_vertex_handle(heh);
-    VertexHandle Bh = _mesh->to_vertex_handle(heh);
-    MyMesh::Point A = _mesh->point(Ah);
-    MyMesh::Point B = _mesh->point(Bh);
-    //recuperation du milieu de [AB]
-    MyMesh::Point milieu1 = milieu(A,B);
-    //Recuperation de la mediatrice du segment AB
-    MyMesh::Point mediatrice1 = rotation(A,B);
+    // on recupere le vecteur v1v2 soit AB
+    MyMesh::Point u = v2 - v1;
+    // on recupere le vecteur v1v3 soit AC
+    MyMesh::Point v = v3 - v1;
 
-    heh = _mesh->next_halfedge_handle(heh);
-    VertexHandle Ch = _mesh->to_vertex_handle(heh);
-    MyMesh::Point C = _mesh->point(Ch);
-    //de meme pour le segment BC
-    MyMesh::Point milieu2 = milieu(B,C);
-    MyMesh::Point mediatrice2 = rotation(B,C);
+    float ux = u[0], uy = u[1];
+    float vx = v[0], vy = v[1];
 
-    //recuperation du point du triangle oppose
-    heh_opp = _mesh->next_halfedge_handle(heh_opp);
-    VertexHandle Dh = _mesh->to_vertex_handle(heh_opp);
-    MyMesh::Point D = _mesh->point(Dh);
-    /*
-    MyMesh::Point milieu3 = milieu(A,D);
-    MyMesh::Point mediatrice3 = rotation(A,D);*/
+    // on calcul les determinant du produit vectoriel
+    // uxv =  (uy*vz - vy*uz)i - (ux*vz - vx*uz)j + (ux*vy - vx*uy)k;
+    // Etant en 2 dimension, nous ne calculons que le det (ux*vy - vx*uy);
+    float f_k = (ux*vy - vx*uy);
 
-    MyMesh::Point centre_circ = intersection(milieu1, mediatrice1, milieu2, mediatrice2);
-    float rayon = distance(A, centre_circ);
-    if(rayon >= distance(D, centre_circ))
-        return true;
+    float area = abs(f_k) / 2.0;
+    return area;
 
-/*    centre_circ = intersection(milieu1, mediatrice1, milieu3, mediatrice3);
-    rayon = distance(D, centre_circ);
-    if(rayon >= distance(A, centre_circ))
-        return true;*/
-
-    return false;
 }
 
+float MainWindow::rayon_cercle_circ(MyMesh::Point A, MyMesh::Point B, MyMesh::Point C){
+    float distAB = distance(A, B);
+    float distBC = distance(B, C);
+    float distAC = distance(A, C);
 
+    float Aire = calcul_aire(A, B, C) ;
 
+    float rayon_x_2 = (distAB*distBC*distAC)/(2.0*Aire);
 
+    float rayon = rayon_x_2/2.0;
+    return rayon;
+}
+float norme(MyMesh::Point p)
+{
+    float dist = sqrt(pow(p[0], 2) + pow(p[1], 2));
+    return dist;
+}
 
+bool MainWindow::crit_boule_vide(MyMesh * _mesh, FaceHandle T, VertexHandle p)
+{
+    // Tout d'abords, récupérons les points de T;
+    MyMesh::Point A, B, C;
+    HalfedgeHandle h = _mesh->halfedge_handle(T);
+    HalfedgeHandle next = _mesh->next_halfedge_handle(h);
+    A = _mesh->point(_mesh->from_vertex_handle(h));
+    B = _mesh->point(_mesh->to_vertex_handle(h));
+    C = _mesh->point(_mesh->to_vertex_handle(next));
 
+    // Maintenant que nous avons le rayon, nous devons recupérer le centre du cercle.
+    // Pour cela, on recupère le milieu d'un des segment du triangle
+    // Et la normal a ce segment
+    MyMesh::Point AB = B-A;
+    //AB = AB/distance(A, B);
+    MyMesh::Point M = (A + B)/2;
+    MyMesh::Point n(-AB[1], AB[0], 0);
+    //n = n/norme(n);
 
+    MyMesh::Point BC = C-B;
+    //AB = AB/distance(A, B);
+    MyMesh::Point M2 = (B + C)/2;
+    MyMesh::Point n2(-BC[1], BC[0], 0);
+    //n2 = n2/norme(n2);
+    // Pour savoir si la normal par dans le bon sens on translate M par celle-c
+    // Se le nouveau point translaté se situe à gauche (det > 0) du segment AB
+    // Alors n est dans le bon sens. sinon -> n = -n;
+    MyMesh::Point M_t = M+n;
+    float det = determinant(A, B, M_t);
+    if(det < 0)
+        n = -n;
+    M_t = M2+n2;
+    det = determinant(B, C, M_t);
+    if(det < 0)
+        n2 = -n2;
+    // On calcul le centre, intersection des deux normals
+    MyMesh::Point O = intersection(M, n, M2, n2);
+    O[2] = 0;
 
+    //Calcul du rayon
+    float rayon = distance(O, A);
 
-
-
-
+    // On calcul la distance entre le centre O et le point P à tester
+    MyMesh::Point P = _mesh->point(p);
+    float dist = distance(O, P);
+    if(dist > rayon)
+      return false;
+    return true;
+}
 
 // permet d'initialiser les couleurs et les épaisseurs des élements du maillage
 void MainWindow::resetAllColorsAndThickness(MyMesh* _mesh)
@@ -803,13 +871,6 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-
-void MainWindow::on_pushButton_clicked()
-{
-    cloud = generer_3points();
-    displayMesh(&cloud);
-}
-
 void MainWindow::on_horizontalSlider_valueChanged(int value)
 {
     MyMesh * _mesh = &cloud;
@@ -830,11 +891,6 @@ void MainWindow::on_horizontalSlider_2_valueChanged(int value)
     displayMesh(&cloud);
 }
 
-void MainWindow::on_pushButton_2_clicked()
-{
-    cloud = generer_6points();
-    displayMesh(&cloud);
-}
 
 void MainWindow::on_pushButton_3_clicked()
 {
@@ -885,3 +941,167 @@ void MainWindow::on_pushButton_6_clicked()
     }
     displayMesh(&cloud);
 }
+void color_edge(MyMesh * _mesh, int id, MyMesh::Color c){
+    EdgeHandle e= _mesh->edge_handle(id);
+    _mesh->set_color(e, c);
+}
+void MainWindow::on_spinBox_2_valueChanged(int arg1)
+{
+    if(id_edge >0)
+        color_edge(&cloud, id_edge, MyMesh::Color(0,0, 0));
+    id_edge = arg1;
+    color_edge(&cloud, id_edge, MyMesh::Color(255,0, 0));
+    displayMesh(&cloud);
+}
+
+bool MainWindow::aucun_point_inf(MyMesh *_mesh, EdgeHandle e){
+    HalfedgeHandle eh_0 = _mesh->halfedge_handle(e, 0);
+    HalfedgeHandle eh_1 = _mesh->halfedge_handle(e, 1);
+    HalfedgeHandle next_0 = _mesh->next_halfedge_handle(eh_0);
+    HalfedgeHandle next_1 = _mesh->next_halfedge_handle(eh_1);
+
+    VertexHandle A,B,C,D;
+    A = _mesh->from_vertex_handle(eh_0);
+    B = _mesh->to_vertex_handle(eh_0);
+    C = _mesh->to_vertex_handle(next_0);
+    D = _mesh->to_vertex_handle(next_1);
+
+    int pA, pB, pC, pD;
+
+    pA = _mesh->property(Inf, A);
+    pB = _mesh->property(Inf, B);
+    pC = _mesh->property(Inf, C);
+    pD = _mesh->property(Inf, D);
+
+    if (pA != INFINI && pB != INFINI && pC != INFINI && pD != INFINI){
+        return true;
+    }
+    return false;
+}
+int MainWindow::n_voisin_inf(MyMesh *_mesh, EdgeHandle e){
+    std::vector<VertexHandle> points;
+
+    HalfedgeHandle e_1 = _mesh->halfedge_handle(e, 0);
+    HalfedgeHandle e_1_n = _mesh->next_halfedge_handle(e_1);
+
+    HalfedgeHandle e_2 = _mesh->halfedge_handle(e, 1);
+    HalfedgeHandle e_2_n = _mesh->next_halfedge_handle(e_2);
+
+    VertexHandle A,B,C,D;
+
+    A = _mesh->from_vertex_handle(e_1);
+    points.push_back(A);
+    B = _mesh->to_vertex_handle(e_1);
+    points.push_back(B);
+    C = _mesh->to_vertex_handle(e_1_n);
+    points.push_back(C);
+    D = _mesh->to_vertex_handle(e_2_n);
+    points.push_back(D);
+
+    int n = 0;
+
+    for(VertexHandle v: points){
+        if(_mesh->property(Inf, v) == INFINI)
+            n++;
+    }
+
+    return n;
+}
+
+std::vector<EdgeHandle> MainWindow::recup_voisin(MyMesh *_mesh, EdgeHandle e){
+    std::vector<EdgeHandle> edges;
+
+    HalfedgeHandle e_1 = _mesh->halfedge_handle(e, 0);
+    HalfedgeHandle e_1_n = _mesh->next_halfedge_handle(e_1);
+    HalfedgeHandle e_1_n2 = _mesh->next_halfedge_handle(e_1_n);
+
+    HalfedgeHandle e_2 = _mesh->halfedge_handle(e, 1);
+    HalfedgeHandle e_2_n = _mesh->next_halfedge_handle(e_2);
+    HalfedgeHandle e_2_n2 = _mesh->next_halfedge_handle(e_2_n);
+
+    EdgeHandle a, b, c, d;
+    a = _mesh->edge_handle(e_1_n);
+    b = _mesh->edge_handle(e_1_n2);
+    c = _mesh->edge_handle(e_2_n);
+    d = _mesh->edge_handle(e_2_n2);
+
+    if(!_mesh->is_boundary(a) && _mesh->property(Mark, a) == UNMARK){
+        edges.push_back(a);
+    }
+    if(!_mesh->is_boundary(b) && _mesh->property(Mark, b) == UNMARK){
+        edges.push_back(b);
+    }
+    if(!_mesh->is_boundary(c) && _mesh->property(Mark, c) == UNMARK){
+        edges.push_back(c);
+    }
+    if(!_mesh->is_boundary(d) && _mesh->property(Mark, d) == UNMARK){
+        edges.push_back(d);
+    }
+
+    return edges;
+}
+void MainWindow::edge_flip_algo(MyMesh *_mesh){
+    // On ajoute tout les edges qui n'ont pas de voisins à l'infini à une pile;
+    std::queue<EdgeHandle> pile;
+    _mesh->add_property(Mark, "Mark");
+    for (MyMesh::EdgeIter e_it = _mesh->edges_begin(); e_it != _mesh->edges_end(); e_it++) {
+        EdgeHandle e = *e_it;
+        if(!_mesh->is_boundary(e)){
+            pile.push(e);
+            _mesh->property(Mark, e) = MARK;
+        }
+        else qDebug() << "is bound";
+    }
+
+    // Debut - tant que la pile n'est pas vide
+    while(!pile.empty()){
+        EdgeHandle e = pile.back();
+        pile.pop();
+        _mesh->property(Mark, e) = UNMARK;
+        std::vector<EdgeHandle> voisins;
+
+        if(n_voisin_inf(_mesh, e) == 1){
+            qDebug() << "1 voisins";
+            voisins = recup_voisin(_mesh, e);
+            for(EdgeHandle e_v : voisins){
+                pile.push(e_v);
+            }
+            _mesh->flip(e);
+        }
+
+        if(n_voisin_inf(_mesh, e) == 0){
+            qDebug() << "0 voisins";
+            voisins = recup_voisin(_mesh, e);
+            for(EdgeHandle e_v : voisins){
+                pile.push(e_v);
+            }
+            _mesh->flip(e);
+        }
+    }
+
+
+}
+
+bool MainWindow::est_ilegal_edge(MyMesh *_mesh, EdgeHandle e){
+    HalfedgeHandle e_1 = _mesh->halfedge_handle(e, 0);
+    VertexHandle p = _mesh->to_vertex_handle(_mesh->next_halfedge_handle(e_1));
+
+    FaceHandle t_1 = _mesh->face_handle(e_1);
+    HalfedgeHandle e_2 = _mesh->halfedge_handle(e, 1);
+    VertexHandle p2 =_mesh->to_vertex_handle(_mesh->next_halfedge_handle(e_2));
+    FaceHandle t_2 = _mesh->face_handle(e_2);
+    if(crit_boule_vide(_mesh, t_1, p2)){
+        return true;
+    }
+    if(crit_boule_vide(_mesh, t_2, p))
+        return true;
+    return false;
+}
+
+void MainWindow::on_pushButton_clicked()
+{
+    edge_flip_algo(&cloud);
+    recolor_edges(&cloud);
+    displayMesh(&cloud);
+}
+

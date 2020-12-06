@@ -46,16 +46,26 @@
         <number>3</number>
        </property>
        <item>
-        <widget class="QPushButton" name="pushButton">
-         <property name="text">
-          <string>Générer 3 points</string>
+        <layout class="QHBoxLayout" name="horizontalLayout_3">
+         <property name="bottomMargin">
+          <number>0</number>
          </property>
-        </widget>
+         <item>
+          <widget class="QLabel" name="label_4">
+           <property name="text">
+            <string>Id Edge</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QSpinBox" name="spinBox_2"/>
+         </item>
+        </layout>
        </item>
        <item>
-        <widget class="QPushButton" name="pushButton_2">
+        <widget class="QPushButton" name="pushButton">
          <property name="text">
-          <string>Générer 6 points</string>
+          <string>Flip edge</string>
          </property>
         </widget>
        </item>
@@ -138,9 +148,9 @@
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="pushButton_4">
+        <widget class="QPushButton" name="pushButton_2">
          <property name="text">
-          <string>Diviser en 4 triangles</string>
+          <string>PushButton</string>
          </property>
         </widget>
        </item>
