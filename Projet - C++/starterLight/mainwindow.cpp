@@ -3,6 +3,7 @@
 #include "QRandomGenerator"
 #include<iostream>
 #include<queue>
+#include<deque>
 
 MyMesh MainWindow::generer_3points(){
     MyMesh nube;
@@ -139,13 +140,27 @@ MyMesh MainWindow::generation_aleatoire(int n){
     nube.add_property(TriangleSupport, "EdgeSupport");
     nube.add_property(Inf, "Inf");
     nube.add_property(DEL, "DEL");
+
+    QVector<MyMesh::Point> list_p;
     int min = -25;
     int max = 25;
     for (int i=0; i<n; i++) {
         int x = QRandomGenerator::global()->bounded(min, max);
         int y = QRandomGenerator::global()->bounded(min, max);
-
-        nube.add_vertex(MyMesh::Point(x, y, 0));
+        MyMesh::Point p(x, y, 0);
+        if(!list_p.contains(p)){
+            list_p.push_back(p);
+            nube.add_vertex(p);
+        }
+        else{
+            while (list_p.contains(p)) {
+                int x = QRandomGenerator::global()->bounded(min, max);
+                int y = QRandomGenerator::global()->bounded(min, max);
+                p = MyMesh::Point(x, y, 0);
+            }
+            list_p.push_back(p);
+            nube.add_vertex(p);
+        }
     }
 
     for (MyMesh::VertexIter v = nube.vertices_begin(); v != nube.vertices_end(); v++) {
@@ -255,14 +270,6 @@ void MainWindow::creer_triangle_englobant(MyMesh *_mesh){
 
 // Geometrie
 
-float MainWindow::produit_scaliare(MyMesh::Point p, MyMesh::Point q){
-   float px, py, pz;
-   float qx, qy, qz;
-   px = p[0]; py = p[1]; pz = p[2];
-   qx = q[0]; qy = q[1]; qz = q[2];
-
-   return px*qx + py*qy + pz*qz;
-}
 
 void MainWindow::Hermeline(MyMesh *_mesh, int id_point){
 
@@ -585,11 +592,11 @@ bool MainWindow::crit_boule_vide(MyMesh * _mesh, FaceHandle T, VertexHandle p)
     MyMesh::Point A, B, C;
     HalfedgeHandle h = _mesh->halfedge_handle(T);
     HalfedgeHandle next = _mesh->next_halfedge_handle(h);
+
     A = _mesh->point(_mesh->from_vertex_handle(h));
     B = _mesh->point(_mesh->to_vertex_handle(h));
     C = _mesh->point(_mesh->to_vertex_handle(next));
 
-    // Maintenant que nous avons le rayon, nous devons recupérer le centre du cercle.
     // Pour cela, on recupère le milieu d'un des segment du triangle
     // Et la normal a ce segment
     MyMesh::Point AB = B-A;
@@ -606,13 +613,16 @@ bool MainWindow::crit_boule_vide(MyMesh * _mesh, FaceHandle T, VertexHandle p)
     // Pour savoir si la normal par dans le bon sens on translate M par celle-c
     // Se le nouveau point translaté se situe à gauche (det > 0) du segment AB
     // Alors n est dans le bon sens. sinon -> n = -n;
+    MyMesh::Point P = _mesh->point(p);
     MyMesh::Point M_t = M+n;
     float det = determinant(A, B, M_t);
-    if(det < 0)
+    float det_p = determinant(A, B, P);
+    if((det < 0 && det_p > 0) || (det > 0 && det_p < 0))
         n = -n;
     M_t = M2+n2;
     det = determinant(B, C, M_t);
-    if(det < 0)
+    det_p = determinant(B, C, P);
+    if((det < 0 && det_p > 0) || (det > 0 && det_p < 0))
         n2 = -n2;
     // On calcul le centre, intersection des deux normals
     MyMesh::Point O = intersection(M, n, M2, n2);
@@ -622,7 +632,6 @@ bool MainWindow::crit_boule_vide(MyMesh * _mesh, FaceHandle T, VertexHandle p)
     float rayon = distance(O, A);
 
     // On calcul la distance entre le centre O et le point P à tester
-    MyMesh::Point P = _mesh->point(p);
     float dist = distance(O, P);
     if(dist > rayon)
       return false;
@@ -900,14 +909,6 @@ void MainWindow::on_pushButton_3_clicked()
     displayMesh(&cloud);
 }
 
-void MainWindow::on_pushButton_4_clicked()
-{
-    separe_4 = true;
-    cloud = generer_6points();
-    separe_4 = false;
-    displayMesh(&cloud);
-}
-
 void MainWindow::on_pushButton_5_clicked()
 {
     cloud = generation_aleatoire(nb_points);
@@ -978,6 +979,8 @@ bool MainWindow::aucun_point_inf(MyMesh *_mesh, EdgeHandle e){
     }
     return false;
 }
+
+
 int MainWindow::n_voisin_inf(MyMesh *_mesh, EdgeHandle e){
     std::vector<VertexHandle> points;
 
@@ -1006,6 +1009,77 @@ int MainWindow::n_voisin_inf(MyMesh *_mesh, EdgeHandle e){
     }
 
     return n;
+}
+
+bool MainWindow::est_flippable(MyMesh *_mesh, EdgeHandle e){
+    // On recupere les deux point de l'edge
+    HalfedgeHandle heh1 = _mesh->halfedge_handle(e, 0);
+    HalfedgeHandle heh2 = _mesh->halfedge_handle(e, 1);
+
+    HalfedgeHandle heh1_next = _mesh->next_halfedge_handle(heh1);
+    HalfedgeHandle heh2_next = _mesh->next_halfedge_handle(heh2);
+
+    VertexHandle v_a, v_b, v_c, v_d;
+    v_a = _mesh->from_vertex_handle(heh1);
+    v_b = _mesh->to_vertex_handle(heh1);
+    v_c = _mesh->to_vertex_handle(heh1_next);
+    v_d = _mesh->to_vertex_handle(heh2_next);
+
+    MyMesh::Point A = _mesh->point(v_a);
+    MyMesh::Point B = _mesh->point(v_b);
+    MyMesh::Point C = _mesh->point(v_c);
+    MyMesh::Point D = _mesh->point(v_d);
+
+    // On va recuperer le signe du produit scalaire pour AC, AD et BC, BD
+    // On regarde que D soi a gauche de AC
+    MyMesh::Point AC = C - A;
+    MyMesh::Point AD = D - A;
+    MyMesh::Point BC = C - B;
+    MyMesh::Point BD = D - B;
+    float det = determinant(A, C, B);
+    int x_u, y_u, x_v, y_v;
+    int signe_sinus =0;
+    if(det > 0){
+        x_u = AC[0]; y_u = AC[1];
+        x_v = AD[0]; y_v = AD[1];
+        signe_sinus = x_u * y_v - x_v * y_u;
+        if(signe_sinus <= 0)
+            return false;
+    }
+    else{
+        x_u = AD[0]; y_u = AD[1];
+        x_v = AC[0]; y_v = AC[1];
+        signe_sinus = x_u * y_v - x_v * y_u;
+        if(signe_sinus <= 0)
+            return false;
+    }
+
+    det = determinant(B, C, A);
+    if(det > 0){
+        x_u = BC[0]; y_u = BC[1];
+        x_v = BD[0]; y_v = BD[1];
+        signe_sinus = x_u * y_v - x_v * y_u;
+        if(signe_sinus <= 0)
+            return false;
+    }
+    else{
+        x_u = BD[0]; y_u = BD[1];
+        x_v = BC[0]; y_v = BC[1];
+        signe_sinus = x_u * y_v - x_v * y_u;
+        if(signe_sinus <= 0)
+            return false;
+    }
+
+    return true;
+}
+
+bool MainWindow::un_point_infini(MyMesh*_mesh ,HalfedgeHandle e){
+    VertexHandle A = _mesh->from_vertex_handle(e);
+    VertexHandle B = _mesh->to_vertex_handle(e);
+    if(_mesh->property(Inf, A) == INFINI || _mesh->property(Inf, B) == INFINI){
+        return true;
+    }
+    return false;
 }
 
 std::vector<EdgeHandle> MainWindow::recup_voisin(MyMesh *_mesh, EdgeHandle e){
@@ -1050,58 +1124,106 @@ void MainWindow::edge_flip_algo(MyMesh *_mesh){
             pile.push(e);
             _mesh->property(Mark, e) = MARK;
         }
-        else qDebug() << "is bound";
     }
 
     // Debut - tant que la pile n'est pas vide
     while(!pile.empty()){
-        EdgeHandle e = pile.back();
+        EdgeHandle eh = pile.front();
         pile.pop();
-        _mesh->property(Mark, e) = UNMARK;
+        _mesh->property(Mark, eh) = UNMARK;
         std::vector<EdgeHandle> voisins;
+        int voi = n_voisin_inf(_mesh, eh);
+        if(aucun_point_inf(_mesh, eh) && est_flippable(_mesh, eh)){
 
-        if(n_voisin_inf(_mesh, e) == 1){
-            qDebug() << "1 voisins";
-            voisins = recup_voisin(_mesh, e);
-            for(EdgeHandle e_v : voisins){
-                pile.push(e_v);
+            if(est_ilegal_edge(_mesh, eh)){
+                voisins = recup_voisin(_mesh, eh);
+                _mesh->flip(eh);
+                for(EdgeHandle e : voisins)
+                    pile.push(e);
             }
-            _mesh->flip(e);
+        }
+        else if(voi==1){
+            HalfedgeHandle heh =  _mesh->halfedge_handle(eh,0);
+            if(est_flippable(_mesh, eh) && un_point_infini(_mesh,heh)){
+                voisins = recup_voisin(_mesh, eh);
+                _mesh->flip(eh);
+                for(EdgeHandle e : voisins)
+                    pile.push(e);
+            }
         }
 
-        if(n_voisin_inf(_mesh, e) == 0){
-            qDebug() << "0 voisins";
-            voisins = recup_voisin(_mesh, e);
-            for(EdgeHandle e_v : voisins){
-                pile.push(e_v);
-            }
-            _mesh->flip(e);
-        }
     }
 
+    // On enleve les points et edges à l'infini
+    for (MyMesh::VertexIter v = _mesh->vertices_begin(); v!= _mesh->vertices_end(); v++) {
+        if(_mesh->property(Inf,*v) == INFINI){
+            _mesh->data(*v).thickness = 0;
+            for (MyMesh::VertexEdgeIter ve_it = _mesh->ve_iter(*v); ve_it.is_valid(); ve_it++) {
+                _mesh->data(*ve_it).thickness= 0;
+            }
+
+        }
+    }
 
 }
 
 bool MainWindow::est_ilegal_edge(MyMesh *_mesh, EdgeHandle e){
     HalfedgeHandle e_1 = _mesh->halfedge_handle(e, 0);
-    VertexHandle p = _mesh->to_vertex_handle(_mesh->next_halfedge_handle(e_1));
-
-    FaceHandle t_1 = _mesh->face_handle(e_1);
     HalfedgeHandle e_2 = _mesh->halfedge_handle(e, 1);
-    VertexHandle p2 =_mesh->to_vertex_handle(_mesh->next_halfedge_handle(e_2));
+    VertexHandle p =_mesh->to_vertex_handle(_mesh->next_halfedge_handle(e_1));
+    FaceHandle t_1 = _mesh->face_handle(e_1);
     FaceHandle t_2 = _mesh->face_handle(e_2);
-    if(crit_boule_vide(_mesh, t_1, p2)){
+    VertexHandle p2 =_mesh->to_vertex_handle(_mesh->next_halfedge_handle(e_2));
+    if(crit_boule_vide(_mesh, t_1, p2) || crit_boule_vide(_mesh, t_2, p)){
         return true;
     }
-    if(crit_boule_vide(_mesh, t_2, p))
-        return true;
     return false;
 }
 
 void MainWindow::on_pushButton_clicked()
 {
-    edge_flip_algo(&cloud);
-    recolor_edges(&cloud);
-    displayMesh(&cloud);
+    MyMesh * _mesh = &cloud;
+    int n = _mesh->n_edges();
+    if(id_edge < n){
+        EdgeHandle eh = _mesh->edge_handle(id_edge);
+        int voi = n_voisin_inf(_mesh, eh);
+        if(!_mesh->is_boundary(eh)){
+            if(aucun_point_inf(_mesh, eh) && est_flippable(_mesh, eh)){
+                qDebug() << "est_flippable, voisin inf = " << voi;
+                if(est_ilegal_edge(_mesh, eh)){
+                    qDebug() << "flipped";
+                    _mesh->flip(eh);
+                }
+            }
+            else if(voi==1){
+                HalfedgeHandle heh =  _mesh->halfedge_handle(eh,0);
+                if(est_flippable(_mesh, eh) && un_point_infini(_mesh,heh))
+                    _mesh->flip(eh);
+            }
+        }
+        id_edge++;
+        if(id_edge < n && id_edge > 0){
+            color_edge(_mesh, id_edge-1, MyMesh::Color(0, 0, 0));
+            color_edge(_mesh, id_edge, MyMesh::Color(255, 0, 0));
+        }
+    }
+    if(id_edge >= n){
+        for (MyMesh::VertexIter v = _mesh->vertices_begin(); v!= _mesh->vertices_end(); v++) {
+            if(_mesh->property(Inf,*v) == INFINI){
+                _mesh->data(*v).thickness = 0;
+                for (MyMesh::VertexEdgeIter ve_it = _mesh->ve_iter(*v); ve_it.is_valid(); ve_it++) {
+                    _mesh->data(*ve_it).thickness= 0;
+                }
+
+            }
+        }
+    }
+    displayMesh(_mesh);
 }
 
+
+void MainWindow::on_pushButton_2_clicked()
+{
+    edge_flip_algo(&cloud);
+    displayMesh(&cloud);
+}

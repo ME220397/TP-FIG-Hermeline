@@ -64,6 +64,7 @@ public:
     bool aucun_point_inf(MyMesh *_mesh, EdgeHandle e);
     int n_voisin_inf(MyMesh *_mesh, EdgeHandle e);
     std::vector<EdgeHandle> recup_voisin(MyMesh *_mesh, EdgeHandle e);
+    bool est_bon_inf(MyMesh *_mesh,EdgeHandle eh);
     // Geometrie
     float produit_scaliare(MyMesh::Point p, MyMesh::Point q);
     float produit_vectoriel(MyMesh::Point p, MyMesh::Point q);
@@ -81,7 +82,8 @@ public:
     MyMesh::Point milieu(MyMesh::Point A, MyMesh::Point B);
 
 
-
+    bool est_flippable(MyMesh* _mesh, EdgeHandle e);
+    bool un_point_infini(MyMesh*mesh, HalfedgeHandle e);
 
     void displayMesh(MyMesh *_mesh, DisplayMode mode = DisplayMode::Normal);
     void resetAllColorsAndThickness(MyMesh* _mesh);
@@ -95,8 +97,6 @@ private slots:
 
     void on_pushButton_3_clicked();
 
-    void on_pushButton_4_clicked();
-
     void on_pushButton_5_clicked();
 
     void on_spinBox_valueChanged(int arg1);
@@ -106,6 +106,8 @@ private slots:
     void on_spinBox_2_valueChanged(int arg1);
 
     void on_pushButton_clicked();
+
+    void on_pushButton_2_clicked();
 
 private:
     bool modevoisinage;

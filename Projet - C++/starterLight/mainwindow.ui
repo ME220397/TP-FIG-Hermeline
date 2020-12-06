@@ -46,30 +46,6 @@
         <number>3</number>
        </property>
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_3">
-         <property name="bottomMargin">
-          <number>0</number>
-         </property>
-         <item>
-          <widget class="QLabel" name="label_4">
-           <property name="text">
-            <string>Id Edge</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QSpinBox" name="spinBox_2"/>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <widget class="QPushButton" name="pushButton">
-         <property name="text">
-          <string>Flip edge</string>
-         </property>
-        </widget>
-       </item>
-       <item>
         <layout class="QHBoxLayout" name="horizontalLayout_2">
          <property name="bottomMargin">
           <number>0</number>
@@ -150,7 +126,7 @@
        <item>
         <widget class="QPushButton" name="pushButton_2">
          <property name="text">
-          <string>PushButton</string>
+          <string>Flip_Algo</string>
          </property>
         </widget>
        </item>
@@ -170,7 +146,31 @@
        <item>
         <widget class="QPushButton" name="pushButton_6">
          <property name="text">
-          <string>Hermeline</string>
+          <string>Hermeline - Etapes</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_3">
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+         <item>
+          <widget class="QLabel" name="label_4">
+           <property name="text">
+            <string>Id Edge</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QSpinBox" name="spinBox_2"/>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QPushButton" name="pushButton">
+         <property name="text">
+          <string>Flip edge - Etapes</string>
          </property>
         </widget>
        </item>
