@@ -50,9 +50,6 @@ public:
     ~MainWindow();
 
     // Fonction utilitaire
-    MyMesh generer_3points();
-    MyMesh generer_6points();
-    MyMesh generer_3points_aligne();
     MyMesh generation_aleatoire(int n);
     void creer_boite_englobante(MyMesh *_mesh);
     void transfo_edge(MyMesh * _mesh, FaceHandle f);
@@ -64,22 +61,16 @@ public:
     bool aucun_point_inf(MyMesh *_mesh, EdgeHandle e);
     int n_voisin_inf(MyMesh *_mesh, EdgeHandle e);
     std::vector<EdgeHandle> recup_voisin(MyMesh *_mesh, EdgeHandle e);
-    bool est_bon_inf(MyMesh *_mesh,EdgeHandle eh);
     // Geometrie
-    float produit_scaliare(MyMesh::Point p, MyMesh::Point q);
-    float produit_vectoriel(MyMesh::Point p, MyMesh::Point q);
     int determinant(MyMesh::Point A, MyMesh::Point B, MyMesh::Point C);
     bool est_dans_triangle(MyMesh * _mesh,VertexHandle p, FaceHandle fh);
-    bool est_dans_arete(VertexHandle p, HalfedgeHandle heh);
     void separation_3_triangle(MyMesh *_mesh, VertexHandle p, FaceHandle f);
     void separation_4_triangle(MyMesh *_mesh, VertexHandle p, EdgeHandle e);
     void Hermeline(MyMesh * _mesh, int id_point);
+    void Hermeline_complet(MyMesh * _mesh);
     bool crit_boule_vide(MyMesh * _mesh, FaceHandle T, VertexHandle P);
-    float rayon_cercle_circ(MyMesh::Point A, MyMesh::Point B, MyMesh::Point C);
     MyMesh::Point intersection(MyMesh::Point m1, MyMesh::Point v1, MyMesh::Point m2, MyMesh::Point v2);
-    MyMesh::Point rotation(MyMesh::Point A, MyMesh::Point B);
     float distance(MyMesh::Point A, MyMesh::Point B);
-    MyMesh::Point milieu(MyMesh::Point A, MyMesh::Point B);
 
 
     bool est_flippable(MyMesh* _mesh, EdgeHandle e);
@@ -94,8 +85,6 @@ private slots:
     void on_horizontalSlider_valueChanged(int value);
 
     void on_horizontalSlider_2_valueChanged(int value);
-
-    void on_pushButton_3_clicked();
 
     void on_pushButton_5_clicked();
 

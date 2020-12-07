@@ -5,133 +5,6 @@
 #include<queue>
 #include<deque>
 
-MyMesh MainWindow::generer_3points(){
-    MyMesh nube;
-
-    nube.add_property(Etat, "Etat");
-    nube.add_property(EdgeSupport, "EdgeSupport");
-    nube.add_property(TriangleSupport, "EdgeSupport");
-    MyMesh::Point a(0, 0, 0);
-    MyMesh::Point b(3, 0, 0);
-    MyMesh::Point c(0, 3, 0);
-    MyMesh::Point in(1,1, 0);
-    MyMesh::Point mid(2,0,0);
-
-    nube.add_vertex(a);
-    nube.add_vertex(b);
-    nube.add_vertex(c);
-    nube.add_vertex(in);
-    nube.add_vertex(mid);
-
-    VertexHandle v1 = nube.vertex_handle(0);
-    VertexHandle v2 = nube.vertex_handle(1);
-    VertexHandle v3 = nube.vertex_handle(2);
-    VertexHandle I = nube.vertex_handle(3);
-    VertexHandle M = nube.vertex_handle(4);
-
-    nube.data(v1).thickness = 10;
-    nube.data(v2).thickness = 10;
-    nube.data(v3).thickness = 10;
-    nube.data(I).thickness = 10;
-    nube.data(M).thickness = 10;
-
-    nube.set_color(v1, MyMesh::Color(0, 0, 255));
-    nube.set_color(v2, MyMesh::Color(0, 0, 255));
-    nube.set_color(v3, MyMesh::Color(0, 0, 255));
-
-    nube.add_face(v1, v2, v3);
-
-    EdgeHandle e1 = nube.edge_handle(0);
-    EdgeHandle e2 = nube.edge_handle(1);
-    EdgeHandle e3 = nube.edge_handle(2);
-
-    nube.data(e1).thickness = 2;
-    nube.data(e2).thickness = 2;
-    nube.data(e3).thickness = 2;
-
-    nube.set_color(e1, MyMesh::Color(0, 0, 0));
-    nube.set_color(e2, MyMesh::Color(0, 0, 0));
-    nube.set_color(e3, MyMesh::Color(0, 0, 0));
-
-    assert(est_dans_triangle(&nube, I, nube.face_handle(0)) == true);
-    assert(est_dans_triangle(&nube, M, nube.face_handle(0)) == true);
-
-
-    return nube;
-}
-
-MyMesh MainWindow::generer_6points(){
-    MyMesh nube;
-
-    nube.add_property(Etat, "Etat");
-    nube.add_property(EdgeSupport, "EdgeSupport");
-    nube.add_property(TriangleSupport, "EdgeSupport");
-    MyMesh::Point a(0, 0, 0);
-    MyMesh::Point b(4, 0, 0);
-    MyMesh::Point c(0, 4, 0);
-    MyMesh::Point d(4, 4, 0);
-    MyMesh::Point in(1,1, 0);
-    MyMesh::Point mid(2,2,0);
-
-    nube.add_vertex(a);
-    nube.add_vertex(b);
-    nube.add_vertex(c);
-    nube.add_vertex(d);
-    nube.add_vertex(in);
-    nube.add_vertex(mid);
-
-    VertexHandle v1 = nube.vertex_handle(0);
-    VertexHandle v2 = nube.vertex_handle(1);
-    VertexHandle v3 = nube.vertex_handle(2);
-    VertexHandle v4 = nube.vertex_handle(3);
-    VertexHandle I = nube.vertex_handle(4);
-    VertexHandle M = nube.vertex_handle(5);
-
-    nube.data(v1).thickness = 10;
-    nube.data(v2).thickness = 10;
-    nube.data(v3).thickness = 10;
-    nube.data(v4).thickness = 10;
-    nube.data(I).thickness = 10;
-    nube.data(M).thickness = 10;
-
-    nube.set_color(v1, MyMesh::Color(0, 0, 255));
-    nube.set_color(v2, MyMesh::Color(0, 0, 255));
-    nube.set_color(v3, MyMesh::Color(0, 0, 255));
-    nube.set_color(v4, MyMesh::Color(0, 0, 255));
-
-    nube.add_face(v1, v2, v3);
-    nube.add_face(v4, v3, v2);
-
-    for(MyMesh::EdgeIter e_i = nube.edges_begin(); e_i != nube.edges_end(); e_i++){
-        nube.data(*e_i).thickness = 2;
-        nube.set_color(*e_i, MyMesh::Color(0, 0, 0));
-    }
-
-    FaceHandle t1 = nube.face_handle(0);
-    FaceHandle t2 = nube.face_handle(1);
-
-    assert(est_dans_triangle(&nube, I, t1) == true);
-    assert(est_dans_triangle(&nube, M, t1) == true);
-
-    assert(est_dans_triangle(&nube, I, t2) == false);
-    assert(est_dans_triangle(&nube, M, t2) == true);
-    if(est_dans_triangle(&nube, I, t1)){
-        if(nube.property(Etat, I) == TRIANGLE)
-            if(separe_3)
-                separation_3_triangle(&nube, I, t1);
-    }
-
-    if(est_dans_triangle(&nube, M, t1)){
-        if(nube.property(Etat, M) == ARETE){
-            if(separe_4){
-                int id = nube.property(EdgeSupport, M);
-                separation_4_triangle(&nube, M, nube.edge_handle(id));
-            }
-        }
-    }
-    recolor_edges(&nube);
-    return nube;
-}
 
 MyMesh MainWindow::generation_aleatoire(int n){
     MyMesh nube;
@@ -269,7 +142,29 @@ void MainWindow::creer_triangle_englobant(MyMesh *_mesh){
 
 
 // Geometrie
-
+void MainWindow::Hermeline_complet(MyMesh *_mesh){
+    for (MyMesh::VertexIter v_it = _mesh->vertices_begin(); v_it != _mesh->vertices_end(); v_it++) {
+        VertexHandle v = *v_it;
+        if(_mesh->property(Inf, v) != INFINI){
+            for(MyMesh::FaceIter f_it = _mesh->faces_begin(); f_it!= _mesh->faces_end(); f_it++){
+                FaceHandle fh = *f_it;
+                if(fh.is_valid() && est_dans_triangle(_mesh, v, fh)){
+                    if(_mesh->property(Etat, v) == TRIANGLE){
+                        separation_3_triangle(_mesh, v, fh);
+                        _mesh->property(Etat, v) = -1;
+                    }
+                    if(_mesh->property(Etat, v) == ARETE){
+                        int id = _mesh->property(EdgeSupport, v);
+                        EdgeHandle e = _mesh->edge_handle(id);
+                        separation_4_triangle(_mesh, v, e);
+                        _mesh->property(Etat, v) = -1;
+                    }
+                    break;
+                }
+            }
+        }
+    }
+}
 
 void MainWindow::Hermeline(MyMesh *_mesh, int id_point){
 
@@ -421,7 +316,6 @@ void MainWindow::separation_4_triangle(MyMesh *_mesh ,VertexHandle P, EdgeHandle
     // On supprime les deux triangles d'origine
     // On s'assure que l'on a bien 2 faces de plus qu'avant
     int n = _mesh->n_faces();
-    qDebug() << "n = " << n << " n_old = " << n_old;
     assert(n == n_old+2);
 }
 bool MainWindow::est_dans_triangle(MyMesh * _mesh, VertexHandle M, FaceHandle fh){
@@ -482,29 +376,10 @@ bool MainWindow::est_dans_triangle(MyMesh * _mesh, VertexHandle M, FaceHandle fh
 
 }
 
-MyMesh::Point MainWindow::milieu(MyMesh::Point A, MyMesh::Point B)
-{
-    MyMesh::Point I;
-    I[0] = (A[0] + B[0])/2;
-    I[1] = (A[1] + B[1])/2;
-    return I;
-}
-
-
 float MainWindow::distance(MyMesh::Point A, MyMesh::Point B)
 {
     float dist = sqrt(pow(B[0] - A[0], 2) + pow(B[1] - A[1], 2));
     return dist;
-}
-
-
-MyMesh::Point MainWindow::rotation(MyMesh::Point A, MyMesh::Point B)
-{
-    MyMesh::Point AB = B-A;
-    MyMesh::Point mediatrice;
-    mediatrice[0] = AB[0]*cos(90) - AB[1]*sin(90);
-    mediatrice[1] = AB[0]*sin(90) + AB[1]*cos(90);
-    return mediatrice;
 }
 
 
@@ -568,18 +443,6 @@ float calcul_aire(MyMesh::Point A, MyMesh::Point B, MyMesh::Point C){
 
 }
 
-float MainWindow::rayon_cercle_circ(MyMesh::Point A, MyMesh::Point B, MyMesh::Point C){
-    float distAB = distance(A, B);
-    float distBC = distance(B, C);
-    float distAC = distance(A, C);
-
-    float Aire = calcul_aire(A, B, C) ;
-
-    float rayon_x_2 = (distAB*distBC*distAC)/(2.0*Aire);
-
-    float rayon = rayon_x_2/2.0;
-    return rayon;
-}
 float norme(MyMesh::Point p)
 {
     float dist = sqrt(pow(p[0], 2) + pow(p[1], 2));
@@ -880,47 +743,6 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::on_horizontalSlider_valueChanged(int value)
-{
-    MyMesh * _mesh = &cloud;
-
-    for(MyMesh::VertexIter v = _mesh->vertices_begin(); v != _mesh->vertices_end(); v++){
-        _mesh->data(*v).thickness = value;
-    }
-    displayMesh(&cloud);
-}
-
-void MainWindow::on_horizontalSlider_2_valueChanged(int value)
-{
-    MyMesh * _mesh = &cloud;
-
-    for(MyMesh::EdgeIter e = _mesh->edges_begin(); e != _mesh->edges_end(); e++){
-        _mesh->data(*e).thickness = value;
-    }
-    displayMesh(&cloud);
-}
-
-
-void MainWindow::on_pushButton_3_clicked()
-{
-    separe_3 = true;
-    cloud = generer_6points();
-    separe_3 = false;
-    displayMesh(&cloud);
-}
-
-void MainWindow::on_pushButton_5_clicked()
-{
-    cloud = generation_aleatoire(nb_points);
-    recolor_edges(&cloud);
-    displayMesh(&cloud);
-}
-
-void MainWindow::on_spinBox_valueChanged(int arg1)
-{
-    nb_points = arg1;
-}
-
 void MainWindow::recolor_edges(MyMesh * _mesh){
     for(MyMesh::EdgeIter e_it = _mesh->edges_begin(); e_it != _mesh->edges_end(); e_it++){
         _mesh->data(*e_it).thickness = 2;
@@ -932,27 +754,11 @@ void MainWindow::color_vertex(MyMesh * _mesh, int i, MyMesh::Color c){
     VertexHandle v = _mesh->vertex_handle(i);
     _mesh->set_color(v, c);
 }
-void MainWindow::on_pushButton_6_clicked()
-{
-    if(id_point < nb_points){
-        Hermeline(&cloud, id_point);
-        color_vertex(&cloud, id_point++, MyMesh::Color(0, 0, 255));
-        recolor_edges(&cloud);
-        color_vertex(&cloud, id_point, MyMesh::Color(255, 165, 0));
-    }
-    displayMesh(&cloud);
-}
+
+
 void color_edge(MyMesh * _mesh, int id, MyMesh::Color c){
     EdgeHandle e= _mesh->edge_handle(id);
     _mesh->set_color(e, c);
-}
-void MainWindow::on_spinBox_2_valueChanged(int arg1)
-{
-    if(id_edge >0)
-        color_edge(&cloud, id_edge, MyMesh::Color(0,0, 0));
-    id_edge = arg1;
-    color_edge(&cloud, id_edge, MyMesh::Color(255,0, 0));
-    displayMesh(&cloud);
 }
 
 bool MainWindow::aucun_point_inf(MyMesh *_mesh, EdgeHandle e){
@@ -1009,6 +815,20 @@ int MainWindow::n_voisin_inf(MyMesh *_mesh, EdgeHandle e){
     }
 
     return n;
+}
+
+
+bool MainWindow::est_ilegal_edge(MyMesh *_mesh, EdgeHandle e){
+    HalfedgeHandle e_1 = _mesh->halfedge_handle(e, 0);
+    HalfedgeHandle e_2 = _mesh->halfedge_handle(e, 1);
+    VertexHandle p =_mesh->to_vertex_handle(_mesh->next_halfedge_handle(e_1));
+    FaceHandle t_1 = _mesh->face_handle(e_1);
+    FaceHandle t_2 = _mesh->face_handle(e_2);
+    VertexHandle p2 =_mesh->to_vertex_handle(_mesh->next_halfedge_handle(e_2));
+    if(crit_boule_vide(_mesh, t_1, p2)){
+        return true;
+    }
+    return false;
 }
 
 bool MainWindow::est_flippable(MyMesh *_mesh, EdgeHandle e){
@@ -1168,19 +988,6 @@ void MainWindow::edge_flip_algo(MyMesh *_mesh){
 
 }
 
-bool MainWindow::est_ilegal_edge(MyMesh *_mesh, EdgeHandle e){
-    HalfedgeHandle e_1 = _mesh->halfedge_handle(e, 0);
-    HalfedgeHandle e_2 = _mesh->halfedge_handle(e, 1);
-    VertexHandle p =_mesh->to_vertex_handle(_mesh->next_halfedge_handle(e_1));
-    FaceHandle t_1 = _mesh->face_handle(e_1);
-    FaceHandle t_2 = _mesh->face_handle(e_2);
-    VertexHandle p2 =_mesh->to_vertex_handle(_mesh->next_halfedge_handle(e_2));
-    if(crit_boule_vide(_mesh, t_1, p2)){
-        return true;
-    }
-    return false;
-}
-
 void MainWindow::on_pushButton_clicked()
 {
     MyMesh * _mesh = &cloud;
@@ -1190,9 +997,7 @@ void MainWindow::on_pushButton_clicked()
         int voi = n_voisin_inf(_mesh, eh);
         if(!_mesh->is_boundary(eh)){
             if(aucun_point_inf(_mesh, eh) && est_flippable(_mesh, eh)){
-                qDebug() << "est_flippable, voisin inf = " << voi;
                 if(est_ilegal_edge(_mesh, eh)){
-                    qDebug() << "flipped";
                     _mesh->flip(eh);
                 }
             }
@@ -1222,9 +1027,62 @@ void MainWindow::on_pushButton_clicked()
     displayMesh(_mesh);
 }
 
+void MainWindow::on_spinBox_valueChanged(int arg1)
+{
+    nb_points = arg1;
+}
+
+void MainWindow::on_pushButton_6_clicked()
+{
+    if(id_point < nb_points){
+        Hermeline(&cloud, id_point);
+        color_vertex(&cloud, id_point++, MyMesh::Color(0, 0, 255));
+        recolor_edges(&cloud);
+        color_vertex(&cloud, id_point, MyMesh::Color(255, 165, 0));
+    }
+    displayMesh(&cloud);
+}
+
+void MainWindow::on_spinBox_2_valueChanged(int arg1)
+{
+    if(id_edge >0)
+        color_edge(&cloud, id_edge, MyMesh::Color(0,0, 0));
+    id_edge = arg1;
+    color_edge(&cloud, id_edge, MyMesh::Color(255,0, 0));
+    displayMesh(&cloud);
+}
+
+void MainWindow::on_horizontalSlider_valueChanged(int value)
+{
+    MyMesh * _mesh = &cloud;
+
+    for(MyMesh::VertexIter v = _mesh->vertices_begin(); v != _mesh->vertices_end(); v++){
+        _mesh->data(*v).thickness = value;
+    }
+    displayMesh(&cloud);
+}
+
+void MainWindow::on_horizontalSlider_2_valueChanged(int value)
+{
+    MyMesh * _mesh = &cloud;
+
+    for(MyMesh::EdgeIter e = _mesh->edges_begin(); e != _mesh->edges_end(); e++){
+        _mesh->data(*e).thickness = value;
+    }
+    displayMesh(&cloud);
+}
+
+void MainWindow::on_pushButton_5_clicked()
+{
+    cloud = generation_aleatoire(nb_points);
+    recolor_edges(&cloud);
+    displayMesh(&cloud);
+}
 
 void MainWindow::on_pushButton_2_clicked()
 {
+    Hermeline_complet(&cloud);
+    recolor_edges(&cloud);
     edge_flip_algo(&cloud);
     displayMesh(&cloud);
 }
