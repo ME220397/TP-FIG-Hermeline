@@ -1,5 +1,5 @@
 # Algorithme d'Hermeline et espace projectif
-Collaborateurs : [KAMMERLOCHER Leo](https://github.com/Leokamm), RINCKEL Etienne (https://github.com/etiennerin), MUNOZ Elias.
+Collaborateurs : [KAMMERLOCHER Leo](https://github.com/Leokamm), [RINCKEL Etienne](https://github.com/etiennerin), MUNOZ Elias.
 <br/><br/>
 Execution du programme :
 <br/><br/>
