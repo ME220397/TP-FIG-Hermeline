@@ -1084,7 +1084,6 @@ bool MainWindow::un_point_infini(MyMesh*_mesh ,HalfedgeHandle e){
 
 std::vector<EdgeHandle> MainWindow::recup_voisin(MyMesh *_mesh, EdgeHandle e){
     std::vector<EdgeHandle> edges;
-
     HalfedgeHandle e_1 = _mesh->halfedge_handle(e, 0);
     HalfedgeHandle e_1_n = _mesh->next_halfedge_handle(e_1);
     HalfedgeHandle e_1_n2 = _mesh->next_halfedge_handle(e_1_n);
@@ -1136,19 +1135,21 @@ void MainWindow::edge_flip_algo(MyMesh *_mesh){
         if(aucun_point_inf(_mesh, eh) && est_flippable(_mesh, eh)){
 
             if(est_ilegal_edge(_mesh, eh)){
-                voisins = recup_voisin(_mesh, eh);
                 _mesh->flip(eh);
+                voisins = recup_voisin(_mesh, eh);
                 for(EdgeHandle e : voisins)
                     pile.push(e);
+                voisins.clear();
             }
         }
         else if(voi==1){
             HalfedgeHandle heh =  _mesh->halfedge_handle(eh,0);
             if(est_flippable(_mesh, eh) && un_point_infini(_mesh,heh)){
-                voisins = recup_voisin(_mesh, eh);
                 _mesh->flip(eh);
+                voisins = recup_voisin(_mesh, eh);
                 for(EdgeHandle e : voisins)
                     pile.push(e);
+                voisins.clear();
             }
         }
 
@@ -1174,7 +1175,7 @@ bool MainWindow::est_ilegal_edge(MyMesh *_mesh, EdgeHandle e){
     FaceHandle t_1 = _mesh->face_handle(e_1);
     FaceHandle t_2 = _mesh->face_handle(e_2);
     VertexHandle p2 =_mesh->to_vertex_handle(_mesh->next_halfedge_handle(e_2));
-    if(crit_boule_vide(_mesh, t_1, p2) || crit_boule_vide(_mesh, t_2, p)){
+    if(crit_boule_vide(_mesh, t_1, p2)){
         return true;
     }
     return false;
